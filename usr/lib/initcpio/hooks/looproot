@@ -1,18 +1,20 @@
 # vim:set ft=sh:
 run_hook ()
 {
-  echo "root=$root"
+  echo "root_dev=$root"
+  export looproot_arg=$root
   echo "Checking if root is a loop device..."
 
-  echo "$root" | grep "^loop:" > /dev/null
+  echo "$looproot_arg" | grep "^loop:" > /dev/null
   if [[ $? -eq 0 ]]; then
     echo "root is a loop device..."
-    root="$(echo "$root" | cut -d ':' -f 2-)"
+    unset root
+    looproot_arg="$(echo "$looproot_arg" | cut -d ':' -f 2-)"
     echo "Setting loop_root mount handler"
     mount_handler="looproot_mount_handler"
     return 0
   else
-    echo "loop_root arg not present, skipping looproot hook"
+    echo "$root is not a looproot dev, skipping looproot hook"
     return 0
   fi
 }
@@ -20,13 +22,13 @@ run_hook ()
 looproot_mount_handler ()
 {
   #Check arg format
-  loop_root_blk_dev=$(echo "$root" | cut -d ':' -f 1)
-  loop_root_file_path=$(echo "$root" | cut -d ':' -f 2)
+  loop_root_blk_dev=$(echo "$looproot_arg" | cut -d ':' -f 1)
+  loop_root_file_path=$(echo "$looproot_arg" | cut -d ':' -f 2)
 
   echo "Trying to mount $loop_root_file_path on $loop_root_blk_dev as root"
 
-  if [[ -z $loop_root_blk_dev || -z $loop_root_file_path ]]; then
-    echo "Error: root arg isnt probably formatted"
+  if [[ -z "$loop_root_blk_dev" || -z "$loop_root_file_path" ]]; then
+    echo "Error: root arg isn't probably formatted"
     return;
   fi
 
