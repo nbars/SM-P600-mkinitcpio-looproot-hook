@@ -1,9 +1,9 @@
 # vim:set ft=sh:
 run_hook ()
 {
-  echo "root_dev=$root"
-  export looproot_arg=$root
-  echo "Checking if root is a loop device..."
+  echo "root=$root"
+  export looproot_arg="$root"
+  echo "Checking if root=${root} is a loop device..."
 
   echo "$looproot_arg" | grep "^loop:" > /dev/null
   if [[ $? -eq 0 ]]; then
@@ -21,22 +21,24 @@ run_hook ()
 
 looproot_mount_handler ()
 {
+  local mount_path="$1"
+
   #Check arg format
   loop_root_blk_dev=$(echo "$looproot_arg" | cut -d ':' -f 1)
   loop_root_file_path=$(echo "$looproot_arg" | cut -d ':' -f 2)
 
-  echo "Trying to mount $loop_root_file_path on $loop_root_blk_dev as root"
+  echo "Trying to mount $loop_root_file_path located on $loop_root_blk_dev as root"
 
   if [[ -z "$loop_root_blk_dev" || -z "$loop_root_file_path" ]]; then
     echo "Error: root arg isn't probably formatted"
     return;
   fi
 
-  mkdir /host
+  mkdir -p /host
   mount -o defaults,noatime "$loop_root_blk_dev" /host
 
-  free_loop_dev="$(losetup -f)"
+  local free_loop_dev="$(losetup -f)"
   losetup "$free_loop_dev" "/host${loop_root_file_path}"
-  mount -o defaults "$free_loop_dev" /new_root
+  mount -o defaults "$free_loop_dev" "$mount_path"
   return;
 }
